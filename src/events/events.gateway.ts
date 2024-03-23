@@ -53,12 +53,20 @@ export class EventsGateway implements OnGatewayDisconnect {
     });
   }
 
+  @SubscribeMessage(ACTIONS.CODE_CHANGE)
+  onCodeChangeEvent(
+    @MessageBody() data: any,
+    @ConnectedSocket() socket: Socket,
+  ) {
+    const { roomId, code } = data;
+    socket.to(roomId).emit(ACTIONS.CODE_CHANGE, { code });
+  }
+
   handleDisconnect(socket: Socket) {
-    console.log('cliend disconnected', socket.id);
     // get All Rooms associated with current client
     const rooms = this.socketIdToRoomId[socket.id];
     // disconnect from each room
-    rooms.forEach((roomId) => {
+    rooms?.forEach((roomId) => {
       this.server.to(roomId).emit(ACTIONS.DISCONNECTED, {
         socketId: socket.id,
         username: this.userNameSocketIdMap[socket.id],
