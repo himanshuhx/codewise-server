@@ -7,7 +7,6 @@ import {
   WebSocketGateway,
   WebSocketServer,
 } from '@nestjs/websockets';
-import { ACTIONS } from 'src/app.constant';
 import { Server, Socket } from 'socket.io';
 
 @WebSocketGateway({
@@ -18,6 +17,15 @@ import { Server, Socket } from 'socket.io';
 export class EventsGateway implements OnGatewayDisconnect {
   @WebSocketServer()
   server: Server;
+
+  ACTIONS = {
+    JOIN: 'join',
+    JOINED: 'joined',
+    DISCONNECTED: 'disconnected',
+    CODE_CHANGE: 'code-change',
+    SYNC_CODE: 'sync-code',
+    LEAVE: 'leave',
+  };
 
   userNameSocketIdMap = {};
   socketIdToRoomId = {};
@@ -31,7 +39,7 @@ export class EventsGateway implements OnGatewayDisconnect {
     );
   }
 
-  @SubscribeMessage(ACTIONS.JOIN)
+  @SubscribeMessage('join')
   onJoinEvent(@MessageBody() data: any, @ConnectedSocket() socket: Socket) {
     const { roomId, username } = data;
     this.userNameSocketIdMap[socket.id] = username;
@@ -45,7 +53,7 @@ export class EventsGateway implements OnGatewayDisconnect {
 
     connectedClients.forEach((client) => {
       const clientSocketId = client.socketId;
-      this.server.to(clientSocketId).emit(ACTIONS.JOINED, {
+      this.server.to(clientSocketId).emit(this.ACTIONS.JOINED, {
         connectedClients,
         socketId: socket.id,
         username,
@@ -53,7 +61,7 @@ export class EventsGateway implements OnGatewayDisconnect {
     });
   }
 
-  @SubscribeMessage(ACTIONS.CODE_CHANGE)
+  @SubscribeMessage('code-change')
   onCodeChangeEvent(
     @MessageBody() data: any,
     @ConnectedSocket() socket: Socket,
@@ -63,7 +71,7 @@ export class EventsGateway implements OnGatewayDisconnect {
     connectedClients.forEach((client) => {
       const clientSocketId = client.socketId;
       if (clientSocketId != socket.id) {
-        this.server.to(clientSocketId).emit(ACTIONS.CODE_CHANGE, {
+        this.server.to(clientSocketId).emit(this.ACTIONS.CODE_CHANGE, {
           code,
         });
       }
@@ -75,7 +83,7 @@ export class EventsGateway implements OnGatewayDisconnect {
     const rooms = this.socketIdToRoomId[socket.id];
     // disconnect from each room
     rooms?.forEach((roomId) => {
-      this.server.to(roomId).emit(ACTIONS.DISCONNECTED, {
+      this.server.to(roomId).emit(this.ACTIONS.DISCONNECTED, {
         socketId: socket.id,
         username: this.userNameSocketIdMap[socket.id],
       });
