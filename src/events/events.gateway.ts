@@ -7,7 +7,7 @@ import {
   WebSocketGateway,
   WebSocketServer,
 } from '@nestjs/websockets';
-import { ACTIONS } from 'app.constants';
+import { ACTIONS } from 'src/app.constant';
 import { Server, Socket } from 'socket.io';
 
 @WebSocketGateway({
